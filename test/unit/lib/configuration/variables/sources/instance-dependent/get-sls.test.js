@@ -23,6 +23,7 @@ describe('test/unit/lib/configuration/variables/sources/instance-dependent/get-s
       custom: {
         sls: '${sls:instanceId}',
         stage: '${sls:stage}',
+        region: '${sls:region}',
         missingAddress: '${sls:}',
         unsupportedAddress: '${sls:foo}',
         nonStringAddress: '${sls:${self:custom.someObject}}',
@@ -83,6 +84,31 @@ describe('test/unit/lib/configuration/variables/sources/instance-dependent/get-s
       }
     );
     expect(configuration.custom.stage).to.equal('staging');
+  });
+
+  it('should resolve ${sls:region}', async () => {
+    // us-east-1 by default
+    await initializeServerless();
+    expect(configuration.custom.region).to.equal('us-east-1');
+    // Resolves to provider.region if it exists
+    await initializeServerless({
+      provider: {
+        region: 'eu-west-1',
+      },
+    });
+    expect(configuration.custom.region).to.equal('eu-west-1');
+    // Resolves to `--region=` if the option is set
+    await initializeServerless(
+      {
+        provider: {
+          region: 'eu-west-1',
+        },
+      },
+      {
+        region: 'eu-central-1',
+      }
+    );
+    expect(configuration.custom.region).to.equal('eu-central-1');
   });
 
   it('should report with an error missing address', async () => {
